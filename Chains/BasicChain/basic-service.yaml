@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: langchain-exposed
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 192.168.1.43
+spec:
+  ports:
+    - port: 8000
+      protocol: TCP
+      targetPort: basicchainport
+  selector:
+    app: basic-chain-server
+  type: LoadBalancer
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: langchain-basic-api
+  labels:
+    app: basic-chain-server
+spec:
+  ports:
+  - port: 8000
+    name: tcp-langchain-api
+    protocol: TCP
+    targetPort: basicchainport
+  type: NodePort
+  selector:
+    app: basic-chain-server
