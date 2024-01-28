@@ -1,0 +1,6 @@
+langchain
+langchain-community
+langchainhub
+llama-cpp-python
+fastapi
+langserve[all]
