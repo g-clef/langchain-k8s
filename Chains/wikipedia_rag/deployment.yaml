@@ -1,0 +1,47 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: wikipedia-rag-server
+  labels:
+    app: wikipedia-rag-server
+  namespace: langchain
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wikipedia-rag-server
+  template:
+    metadata:
+      labels:
+        app: wikipedia-rag-server
+    spec:
+      containers:
+        - name: wikipedia-rag-server
+          image: gclef/langchain:0.1-wikirag
+          imagePullPolicy: "IfNotPresent"
+          resources:
+            requests:
+              memory: "4Gi"
+            limits:
+              memory: "5Gi"
+          ports:
+            - containerPort: 8000
+              name: wikiragport
+              protocol: TCP
+          env:
+            - name: MODEL
+              value: "/models/mistral-7b-instruct-v0.1.Q4_K_M.gguf"
+            - name: N_GPU_LAYERS
+              value: "0"
+            - name: N_CTX
+              value: "4096"
+            - name: N_BATCH
+              value: "1024"
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: langchain-pvc
+---
