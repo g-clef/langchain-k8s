@@ -16,7 +16,7 @@ spec:
         app: ddg-qa-server
     spec:
       containers:
-        - name: wikipedia-rag-server
+        - name: dda-qa-server
           image: gclef/langchain:0.1-ddgqa
           imagePullPolicy: "IfNotPresent"
           resources:
@@ -34,7 +34,7 @@ spec:
             - name: N_GPU_LAYERS
               value: "0"
             - name: N_CTX
-              value: "2048"
+              value: "4096"
             - name: N_BATCH
               value: "1024"
             - name: VECTOR_STORAGE_PATH

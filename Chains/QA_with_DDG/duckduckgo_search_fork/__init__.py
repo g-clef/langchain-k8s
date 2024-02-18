@@ -15,4 +15,4 @@ __all__ = ["DDGS", "AsyncDDGS", "__version__", "cli"]
 
 # A do-nothing logging handler
 # https://docs.python.org/3.3/howto/logging.html#configuring-logging-for-a-library
-logging.getLogger("duckduckgo_search").addHandler(logging.NullHandler())
+logging.getLogger("duckduckgo_search_fork").addHandler(logging.NullHandler())

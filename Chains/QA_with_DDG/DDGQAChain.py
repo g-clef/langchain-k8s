@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from langserve import add_routes
 
 from ddg_web_research import DDGWebResearchRetriever
-from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
+from duckduckgo_search_wrapper import AsyncDuckDuckGoSearchAPIWrapper
 from langchain_community.vectorstores import Chroma
 from langchain_community.llms import LlamaCpp
 from langchain_community.embeddings import LlamaCppEmbeddings
@@ -35,7 +35,7 @@ vectorstore = Chroma(
 )
 
 # Search
-search = DuckDuckGoSearchAPIWrapper()
+search = AsyncDuckDuckGoSearchAPIWrapper()
 
 
 # Initialize
