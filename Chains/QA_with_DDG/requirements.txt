@@ -7,3 +7,4 @@ langserve[all]
 uvicorn
 chromadb
 duckduckgo-search
+html2text

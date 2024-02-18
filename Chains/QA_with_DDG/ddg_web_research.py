@@ -1,11 +1,11 @@
 import logging
+import asyncio
 import re
 from typing import List, Optional
 
 from langchain_community.document_loaders import AsyncHtmlLoader
 from langchain_community.document_transformers import Html2TextTransformer
 from langchain_community.llms import LlamaCpp
-from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 from langchain_core.callbacks import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -13,16 +13,20 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLLM
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field, ValidationError
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
+from langchain_core.outputs import Generation
+
 
 from langchain.chains import LLMChain
 from langchain.chains.prompt_selector import ConditionalPromptSelector
 from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
+from duckduckgo_search_wrapper import AsyncDuckDuckGoSearchAPIWrapper
 
 logger = logging.getLogger(__name__)
+
 
 
 class SearchQueries(BaseModel):
@@ -38,7 +42,7 @@ DEFAULT_LLAMA_SEARCH_PROMPT = PromptTemplate(
     template="""<<SYS>> \n You are an assistant tasked with improving DuckDuckGo search \
 results. \n <</SYS>> \n\n [INST] Generate THREE DuckDuckGo search queries that \
 are similar to this question. The output should be a numbered list of questions \
-and each should have a question mark at the end: \n\n {question} [/INST]""",
+and each must have a question mark at the end: \n\n {question} [/INST]""",
 )
 
 DEFAULT_SEARCH_PROMPT = PromptTemplate(
@@ -46,7 +50,7 @@ DEFAULT_SEARCH_PROMPT = PromptTemplate(
     template="""You are an assistant tasked with improving DuckDuckGo search \
 results. Generate THREE DuckDuckGo search queries that are similar to \
 this question. The output should be a numbered list of questions and each \
-should have a question mark at the end: {question}""",
+must have a question mark at the end: {question}""",
 )
 
 
@@ -62,9 +66,16 @@ class QuestionListOutputParser(PydanticOutputParser):
     def __init__(self) -> None:
         super().__init__(pydantic_object=LineList)
 
-    def parse(self, text: str) -> LineList:
+    def parse(self, generations: List[Generation]) -> LineList:
+        text = ""
+        for entry in generations:
+            text += entry.text + "\n"
         lines = re.findall(r"\d+\..*?(?:\n|$)", text)
         return LineList(lines=lines)
+
+    # if we don't do this, pydantic tries to parse the output from the LLM as json, which
+    # fails entirely since we aren't asking it for json above.
+    parse_result = parse
 
 
 class DDGWebResearchRetriever(BaseRetriever):
@@ -75,7 +86,7 @@ class DDGWebResearchRetriever(BaseRetriever):
         ..., description="Vector store for storing web pages"
     )
     llm_chain: LLMChain
-    search: DuckDuckGoSearchAPIWrapper = Field(..., description="DDG Search API Wrapper")
+    search: AsyncDuckDuckGoSearchAPIWrapper = Field(..., description="DDG Search API Wrapper")
     num_search_results: int = Field(1, description="Number of pages per DDG search")
     text_splitter: TextSplitter = Field(
         RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=50),
@@ -90,7 +101,7 @@ class DDGWebResearchRetriever(BaseRetriever):
         cls,
         vectorstore: VectorStore,
         llm: BaseLLM,
-        search: DuckDuckGoSearchAPIWrapper,
+        search: AsyncDuckDuckGoSearchAPIWrapper,
         prompt: Optional[BasePromptTemplate] = None,
         num_search_results: int = 1,
         text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
@@ -151,10 +162,10 @@ class DDGWebResearchRetriever(BaseRetriever):
                     query = query[:-1]
         return query.strip()
 
-    def search_tool(self, query: str, num_search_results: int = 1) -> List[dict]:
+    async def search_tool(self, query: str, num_search_results: int = 1) -> List[dict]:
         """Returns num_search_results pages per DDG search."""
         query_clean = self.clean_search_query(query)
-        result = self.search.results(query_clean, num_search_results)
+        result = await self.search.results(query_clean, num_search_results)
         return result
 
     def _get_relevant_documents(
@@ -184,7 +195,7 @@ class DDGWebResearchRetriever(BaseRetriever):
         urls_to_look = []
         for query in questions:
             # DDG search
-            search_results = self.search_tool(query, self.num_search_results)
+            search_results = asyncio.run(self.search_tool(query, self.num_search_results))
             logger.info("Searching for relevant urls...")
             logger.info(f"Search results: {search_results}")
             for res in search_results:
@@ -239,7 +250,8 @@ class DDGWebResearchRetriever(BaseRetriever):
 
         # Get search questions
         logger.info("Generating questions for DDG Search ...")
-        result = self.llm_chain({"question": query})
+        logger.warning(self.llm_chain.output_parser)
+        result = await self.llm_chain.acall({"question": query})
         logger.info(f"Questions for DDG Search (raw): {result}")
         questions = getattr(result["text"], "lines", [])
         logger.info(f"Questions for DDG Search: {questions}")
@@ -249,7 +261,7 @@ class DDGWebResearchRetriever(BaseRetriever):
         urls_to_look = []
         for query in questions:
             # DDG search
-            search_results = self.search_tool(query, self.num_search_results)
+            search_results = await self.search_tool(query, self.num_search_results)
             logger.info("Searching for relevant urls...")
             logger.info(f"Search results: {search_results}")
             for res in search_results:
@@ -275,7 +287,6 @@ class DDGWebResearchRetriever(BaseRetriever):
             self.url_database.extend(new_urls)
 
         # Search for relevant splits
-        # TODO: make this async
         logger.info("Grabbing most relevant splits from urls...")
         docs = []
         for query in questions:

@@ -8,3 +8,4 @@ chromadb
 uvicorn
 wikipedia
 duckduckgo-search
+html2text

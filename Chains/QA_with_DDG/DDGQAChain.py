@@ -11,7 +11,6 @@ from langchain_community.embeddings import LlamaCppEmbeddings
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.prompts import ChatPromptTemplate
 
-
 # LLM
 llm = LlamaCpp(
     model_path=os.environ['MODEL'],
