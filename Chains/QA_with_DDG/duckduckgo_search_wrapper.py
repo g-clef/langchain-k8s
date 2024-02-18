@@ -1,12 +1,9 @@
 """Util that calls DuckDuckGo Search.
-
-No setup required. Free.
-https://pypi.org/project/duckduckgo-search/
 """
 from typing import Dict, List, Optional
 
 from langchain_core.pydantic_v1 import BaseModel, Extra
-from .duckduckgo_search_fork.duckduckgo_search_async import AsyncDDGS
+from duckduckgo_search.duckduckgo_search_async import AsyncDDGS
 
 
 class AsyncDuckDuckGoSearchAPIWrapper(BaseModel):

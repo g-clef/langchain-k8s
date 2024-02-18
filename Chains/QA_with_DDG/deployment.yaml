@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: dda-qa-server
-          image: gclef/langchain:0.4-ddgqa
+          image: gclef/langchain:0.10-ddgqa
           imagePullPolicy: "IfNotPresent"
           resources:
             requests:

@@ -6,5 +6,5 @@ fastapi
 langserve[all]
 uvicorn
 chromadb
-duckduckgo-search
+-e git+https://github.com/g-clef/duckduckgo_search.git#egg=duckduckgo_search
 html2text
