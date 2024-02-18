@@ -1,32 +1,32 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: wikipedia-rag-server
+  name: ddg-qa-server
   labels:
-    app: wikipedia-rag-server
+    app: ddg-qa-server
   namespace: langchain
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: wikipedia-rag-server
+      app: ddg-qa-server
   template:
     metadata:
       labels:
-        app: wikipedia-rag-server
+        app: ddg-qa-server
     spec:
       containers:
-        - name: wikipedia-rag-server
-          image: gclef/langchain:0.1-wikirag
+        - name: dda-qa-server
+          image: gclef/langchain:0.1-ddgqa
           imagePullPolicy: "IfNotPresent"
           resources:
             requests:
               memory: "4Gi"
             limits:
-              memory: "6Gi"
+              memory: "5Gi"
           ports:
             - containerPort: 8000
-              name: wikiragport
+              name: ddgqaport
               protocol: TCP
           env:
             - name: MODEL
@@ -37,11 +37,17 @@ spec:
               value: "4096"
             - name: N_BATCH
               value: "1024"
+            - name: VECTOR_STORAGE_PATH
+              value: "/scratch"
           volumeMounts:
             - name: models
               mountPath: /models
+            - name: scratchspace
+              mountPath: /scratch
       volumes:
         - name: models
           persistentVolumeClaim:
             claimName: langchain-pvc
+        - name: scratchspace
+          emptyDir:
 ---

@@ -30,7 +30,7 @@ spec:
               protocol: TCP
           env:
             - name: MODEL
-              value: "/models/mistral-7b-instruct-v0.1.Q4_K_M.gguf"
+              value: "/models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
             - name: N_GPU_LAYERS
               value: "0"
             - name: N_CTX
