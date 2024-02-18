@@ -4,7 +4,6 @@ langchainhub
 llama-cpp-python
 fastapi
 langserve[all]
-chromadb
 uvicorn
-wikipedia
+chromadb
 duckduckgo-search
