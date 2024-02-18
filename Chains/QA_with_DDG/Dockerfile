@@ -17,6 +17,7 @@ WORKDIR app/
 
 COPY DDGQAChain.py /app/
 COPY duckduckgo_search_wrapper.py /app/
-COPY duckduckgo_search_fork /app/
+COPY ddg_web_research.py /app/
+ADD duckduckgo_search_fork /app/
 
 CMD ["python", "DDGQAChain.py"]
