@@ -17,13 +17,15 @@ spec:
     spec:
       containers:
         - name: dda-qa-server
-          image: gclef/langchain:0.10-ddgqa
+          image: gclef/langchain:0.11-ddgqa
           imagePullPolicy: "IfNotPresent"
           resources:
             requests:
+              cpu: "2"
               memory: "4Gi"
             limits:
-              memory: "5Gi"
+              cpu: "3"
+              memory: "6Gi"
           ports:
             - containerPort: 8000
               name: ddgqaport
